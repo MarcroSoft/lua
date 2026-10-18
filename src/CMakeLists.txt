@@ -65,10 +65,19 @@ target_include_directories(lib${PROJECT_NAME}
 # ------------------------------------------------------------------------------
 # 2. Create the executables (Console and GUI versions). wlua prevents the
 #    annoying CMD-Window in the background
-add_executable(lua lua.c ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc)
-add_executable(luac luac.c $<TARGET_OBJECTS:lib${PROJECT_NAME}_objects>
-  ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc)
-add_executable(wlua lua.c ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc)
+add_executable(lua lua.c
+  ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
+)
+add_executable(luac luac.c
+  $<TARGET_OBJECTS:lib${PROJECT_NAME}_objects>
+  ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
+)
+add_executable(wlua lua.c
+  ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
+)
 # Link all executables against the static core
 target_link_libraries(lua PRIVATE lib${PROJECT_NAME})	# depends on lua.dll
 target_link_libraries(luac PRIVATE)			# statically built
