@@ -81,16 +81,19 @@ set_target_properties(liblua_bco PROPERTIES
 add_executable(lua
   lua.c
   ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
 )
 
 add_executable(luac
   luac.c
   ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
 )
 
 add_executable(wlua
   lua.c
   ${PROJECT_SOURCE_DIR}/logo/lua-logo-olp-dist.rc
+  ${PROJECT_SOURCE_DIR}/logo/lua-olp.manifest
 )
 
 target_link_libraries(lua PRIVATE lib${PROJECT_NAME})
