@@ -10,9 +10,9 @@
 ** The game stub only ever loads precompiled bytecode, so the Lua front-end
 ** is dead weight in it. This file is what makes dropping the front-end cost
 ** nothing in the Lua sources themselves: every .c and .h file next to it is
-** byte-identical to the official lua-5.4.8 release, and the entire delta
+** byte-identical to the official lua-5.5.1 release, and the entire delta
 ** lives here and in the liblua_bco target in CMakeLists.txt. Re-basing on a
-** future 5.4.x is then a plain drop-in of src/.
+** future 5.5.x is then a plain drop-in of src/.
 **
 ** Only three symbols tie the rest of the library to the front-end:
 **
@@ -26,8 +26,9 @@
 **
 ** Defining them here lets lparser.c, lcode.c, llex.c and ldump.c stay out
 ** of the archive. This file also stands in for linit.c, with a
-** luaL_openlibs that opens only the sandboxed subset of the standard
-** library, which is what lets loadlib.c, liolib.c and ldblib.c go too.
+** luaL_openselectedlibs that opens only the sandboxed subset of the
+** standard library, which is what lets loadlib.c, liolib.c and ldblib.c go
+** too. (luaL_openlibs is a macro over luaL_openselectedlibs in 5.5.)
 **
 ** Because these are real definitions and not #ifdef'd-away call sites,
 ** linking any of those files back into liblua_bco is a duplicate symbol
@@ -70,9 +71,9 @@ void luaX_init (lua_State *L) {
 ** the stack, so lua_load and luaL_loadbuffer report it through their normal
 ** path and callers never have to know they are talking to a stub.
 */
-LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff, Dyndata *dyd,
-                       const char *name, int firstchar) {
-  UNUSED(z); UNUSED(buff); UNUSED(dyd); UNUSED(firstchar);
+LClosure *luaY_parser (lua_State *L, ZIO *z, Table *anchor, Mbuffer *buff,
+                       Dyndata *dyd, const char *name, int firstchar) {
+  UNUSED(z); UNUSED(anchor); UNUSED(buff); UNUSED(dyd); UNUSED(firstchar);
   luaO_pushfstring(L, "%s: source loading is disabled (bytecode only)", name);
   luaD_throw(L, LUA_ERRSYNTAX);
   return NULL;  /* to avoid warnings; luaD_throw does not return */
@@ -96,24 +97,45 @@ int luaU_dump (lua_State *L, const Proto *f, lua_Writer w, void *data,
 ** left out: none of the three is part of the documented Oidua scripting
 ** API, and leaving them out is what keeps loadlib.c, liolib.c and ldblib.c
 ** out of the archive.
+**
+** The three keep their places in the table, without a function, so every
+** other library keeps the bit lualib.h gives it (LUA_GLIBK, LUA_COLIBK and
+** so on). Asking for one of the three opens or preloads nothing.
 */
-static const luaL_Reg loadedlibs[] = {
+static const luaL_Reg stdlibs[] = {
   {LUA_GNAME, luaopen_base},
+  {LUA_LOADLIBNAME, NULL},
   {LUA_COLIBNAME, luaopen_coroutine},
-  {LUA_TABLIBNAME, luaopen_table},
+  {LUA_DBLIBNAME, NULL},
+  {LUA_IOLIBNAME, NULL},
+  {LUA_MATHLIBNAME, luaopen_math},
   {LUA_OSLIBNAME, luaopen_os},
   {LUA_STRLIBNAME, luaopen_string},
-  {LUA_MATHLIBNAME, luaopen_math},
+  {LUA_TABLIBNAME, luaopen_table},
   {LUA_UTF8LIBNAME, luaopen_utf8},
   {NULL, NULL}
 };
 
 
-LUALIB_API void luaL_openlibs (lua_State *L) {
+/*
+** require and preload selected standard libraries
+*/
+LUALIB_API void luaL_openselectedlibs (lua_State *L, int load, int preload) {
+  int mask;
   const luaL_Reg *lib;
-  /* "require" functions from 'loadedlibs' and set results to global table */
-  for (lib = loadedlibs; lib->func; lib++) {
-    luaL_requiref(L, lib->name, lib->func, 1);
-    lua_pop(L, 1);  /* remove lib */
+  luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
+  for (lib = stdlibs, mask = 1; lib->name != NULL; lib++, mask <<= 1) {
+    if (lib->func == NULL)  /* not in this build? */
+      continue;
+    if (load & mask) {  /* selected? */
+      luaL_requiref(L, lib->name, lib->func, 1);  /* require library */
+      lua_pop(L, 1);  /* remove result from the stack */
+    }
+    else if (preload & mask) {  /* selected? */
+      lua_pushcfunction(L, lib->func);
+      lua_setfield(L, -2, lib->name);  /* add library to PRELOAD table */
+    }
   }
+  lua_assert((mask >> 1) == LUA_UTF8LIBK);
+  lua_pop(L, 1);  /* remove PRELOAD table */
 }

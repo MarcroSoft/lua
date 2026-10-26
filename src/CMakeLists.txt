@@ -49,13 +49,13 @@ set_target_properties(lib${PROJECT_NAME} PROPERTIES
 # weight there. lnoparser.c supplies the three symbols that tie the rest of the
 # library to it - luaX_init (lstate.c), luaY_parser (ldo.c) and luaU_dump
 # (lapi.c) - so lparser.c, lcode.c, llex.c and ldump.c can stay out of the
-# archive. It also stands in for linit.c with a luaL_openlibs limited to the
-# sandboxed stdlib (no package/require, io or debug), which is what lets
+# archive. It also stands in for linit.c with a luaL_openselectedlibs limited
+# to the sandboxed stdlib (no package/require, io or debug), which is what lets
 # loadlib.c, liolib.c and ldblib.c go too.
 #
 # Keeping all of that in lnoparser.c rather than in #ifdefs is what leaves
-# every Lua source file byte-identical to the official 5.4.8 release, so the
-# next 5.4.x is a plain drop-in of src/. It also turns an accidental
+# every Lua source file byte-identical to the official 5.5.1 release, so the
+# next 5.5.x is a plain drop-in of src/. It also turns an accidental
 # re-inclusion of any excluded file into a duplicate symbol error.
 
 set(LUA_BCO_SOURCES ${LUA_CORE_SOURCES})

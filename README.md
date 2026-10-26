@@ -57,9 +57,9 @@ Open an new command window and test lua. Use `CTRL-C` to leave Lua in interactiv
 
 ```cmd
 C:\Users\John Doe>lua
-Lua 5.4.8  Copyright (C) 1994-2025 Lua.org, PUC-Rio
+Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio
 > print(_VERSION)
-Lua 5.4
+Lua 5.5
 >
 C:\Users\John Doe>
 ```
@@ -88,10 +88,10 @@ and running bytecode is unchanged.
 
 Everything that makes this work lives in `src/lnoparser.c`, which defines the
 three symbols the rest of the library uses to reach the front-end (`luaX_init`,
-`luaY_parser`, `luaU_dump`) and stands in for `linit.c`'s `luaL_openlibs`.
-Nothing else is patched: every `.c` and `.h` file under `src/` is byte-identical
-to the official lua-5.4.8 release, so upgrading to a later 5.4.x is a plain
-drop-in of `src/`.
+`luaY_parser`, `luaU_dump`) and stands in for `linit.c`'s
+`luaL_openselectedlibs` (which `luaL_openlibs` calls in 5.5). Nothing else is
+patched: every `.c` and `.h` file under `src/` is byte-identical to the official
+lua-5.5.1 release, so upgrading to a later 5.5.x is a plain drop-in of `src/`.
 
 ## License
 
